@@ -1,5 +1,5 @@
 import Koa from 'koa'
-import bodyParser from 'koa-bodyParser'
+import bodyParser from 'koa-bodyparser'
 
 //创建koa实例
 const app = new Koa()
