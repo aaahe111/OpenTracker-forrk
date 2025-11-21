@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { RegisterParams, User } from '@/types'
+import { authAPI } from '@/api/auth'
 
 const Register = () => {
-  const [form, setForm] = useState<RegisterParams>({
+  const [form, setForm] = useState({
     username: '',
     password: '',
-    role: 'user',
   })
   const [loading, setLoading] = useState(false)
-  // 提示状态：仅 success/error/''，确保只有一种提示显示
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -41,31 +38,31 @@ const Register = () => {
       setErrorMsg('密码不能为空')
       return
     }
-    if (form.password.length < 3) {
-      setErrorMsg('密码长度不能少于3位')
+    if (form.password.length < 6) {
+      setErrorMsg('密码长度不能少于6位')
       return
     }
 
     setLoading(true)
     try {
-      // 1. 检查用户名是否已存在
-      const existingRes = await axios.get<User[]>('/api/users', {
-        params: { username: form.username },
-      })
+      const response = await authAPI.register(form.username, form.password)
 
-      if (existingRes.data.length > 0) {
-        setErrorMsg('用户名已被注册，请更换')
-        setLoading(false)
-        return
+      if (response.code === 200) {
+        // 注册成功
+        setSuccessMsg('注册成功！即将跳转到登录页面')
+        // 重置表单
+        setForm({ username: '', password: '' })
+        // 2秒后跳转到登录页面
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 2000)
+      } else {
+        // 注册失败
+        setErrorMsg(response.message || '注册失败')
       }
-
-      // 2. 注册新用户
-      await axios.post<User>('/api/users', form)
-      setSuccessMsg('注册成功！可直接登录')
-      // 重置表单
-      setForm({ username: '', password: '', role: 'user' })
     } catch (err) {
-      setErrorMsg('注册失败，请稍后重试')
+      // 网络错误或服务器错误
+      setErrorMsg('注册失败，请检查网络连接或稍后重试')
       console.error('注册失败：', err)
     } finally {
       setLoading(false)

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { User } from '@/types'
-import { generateToken, setToken } from '@/utils/token'
+import { authAPI } from '@/api/auth'
+import { setToken } from '@/utils/token'
 
 const Login = () => {
   const [form, setForm] = useState({ username: '', password: '' })
@@ -33,24 +32,21 @@ const Login = () => {
 
     setLoading(true)
     try {
-      const res = await axios.get<User[]>('/api/users', {
-        params: { username: form.username, password: form.password },
-      })
-      // 登录成功（状态码 200）
-      const user = res.data[0]
-      const token = generateToken({ id: user.id, username: user.username, role: user.role })
-      setToken(token)
-      setSuccessMsg('登录成功！即将跳转首页')
-      setTimeout(() => {
-        window.location.href = '/home'
-      }, 2000)
-    } catch (err) {
-      // 登录失败（状态码 401）
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setErrorMsg('用户名或密码错误')
+      const response = await authAPI.login(form.username, form.password)
+
+      if (response.code === 200) {
+        const { user } = response.data
+        const tokenData = { id: user.id, username: user.username, role: 'user' }
+        setToken(JSON.stringify(tokenData))
+        setSuccessMsg('登录成功！即将跳转首页')
+        setTimeout(() => {
+          window.location.href = '/home'
+        }, 2000)
       } else {
-        setErrorMsg('登录失败，请稍后重试')
+        setErrorMsg(response.message || '登录失败')
       }
+    } catch (err) {
+      setErrorMsg('登录失败，请检查网络连接或稍后重试')
     } finally {
       setLoading(false)
     }

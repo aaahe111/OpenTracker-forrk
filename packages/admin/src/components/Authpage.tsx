@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { User } from '@/types'
-import { generateToken, setToken } from '@/utils/token'
+import { authAPI } from '@/api/auth'
+import { setToken } from '@/utils/token'
 import { Form, Input, Button, Card, Alert } from 'antd'
 import type { Rule } from 'antd/es/form'
 const AuthPage = () => {
@@ -37,65 +36,63 @@ const AuthPage = () => {
     clearMsg() // 清除提示信息
   }
 
-  // 注册逻辑 - 保留原始功能，使用antd组件展示提示
+  // 注册逻辑 - 使用真实后端 API
   const handleRegister = async (values: { username: string; password: string }) => {
     const { username, password } = values
 
     setLoading(true)
     try {
-      // 检查用户名是否已存在
-      const res = await axios.get<User[]>('/api/users', { params: { username } })
-      if (res.data.length > 0) {
-        setErrorMsg('用户名已被注册，请更换')
-        return
-      }
+      // 使用真实后端 API 进行注册
+      const response = await authAPI.register(username, password)
 
-      // 注册新用户
-      await axios.post<User>('/api/users', { username, password, role: 'user' })
-      setSuccessMsg('注册成功！可直接登录')
-      // 重置表单
-      form.resetFields()
+      if (response.code === 200) {
+        // 注册成功
+        setSuccessMsg('注册成功！可直接登录')
+        // 重置表单
+        form.resetFields()
+        // 切换到登录模式
+        setTimeout(() => {
+          setIsLogin(true)
+        }, 2000)
+      } else {
+        // 注册失败
+        setErrorMsg(response.message || '注册失败')
+      }
     } catch (err) {
       console.error('注册失败：', err)
-      setErrorMsg('注册失败，请稍后重试')
+      setErrorMsg('注册失败，请检查网络连接或稍后重试')
     } finally {
       setLoading(false)
     }
   }
 
-  // 登录逻辑 - 保留原始功能，使用antd组件展示提示
+  // 登录逻辑 - 使用真实后端 API
   const handleLogin = async (values: { username: string; password: string }) => {
     const { username, password } = values
 
     setLoading(true)
     try {
-      // 校验用户
-      const res = await axios.get<User[]>('/api/users', {
-        params: { username, password },
-      })
+      // 使用真实后端 API 进行登录
+      const response = await authAPI.login(username, password)
 
-      // 前端判断：空数组=登录失败
-      if (res.data.length === 0) {
-        setErrorMsg('用户名或密码错误')
-        return
+      if (response.code === 200) {
+        // 登录成功：保存token并跳转
+        const tokenData = {
+          id: response.data.user.id,
+          username: response.data.user.username,
+        }
+        setToken(JSON.stringify(tokenData))
+        setSuccessMsg('登录成功！即将跳转首页')
+        setTimeout(() => {
+          window.location.href = '/home'
+        }, 2000)
+      } else {
+        // 登录失败
+        setErrorMsg(response.message || '用户名或密码错误')
       }
-
-      // 登录成功：生成token并跳转
-      const user = res.data[0]
-      const token = generateToken({ id: user.id, username: user.username, role: user.role })
-      setToken(token)
-      setSuccessMsg('登录成功！即将跳转首页')
-      setTimeout(() => {
-        window.location.href = '/home'
-      }, 2000)
     } catch (err) {
       console.error('登录失败：', err)
-      // 处理401错误
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setErrorMsg('用户名或密码错误')
-      } else {
-        setErrorMsg('登录失败，请稍后重试')
-      }
+      setErrorMsg('登录失败，请检查网络连接或稍后重试')
     } finally {
       setLoading(false)
     }
@@ -153,12 +150,12 @@ const AuthPage = () => {
             rules={
               [
                 { required: true, message: '请输入密码' },
-                { min: 3, message: '密码长度不能少于3位', when: () => !isLogin },
+                { min: 6, message: '密码长度不能少于6位', when: () => !isLogin },
               ] as Rule[]
             }
           >
             <Input.Password
-              placeholder={isLogin ? '请输入密码' : '请输入密码（不少于3位）'}
+              placeholder={isLogin ? '请输入密码' : '请输入密码（不少于6位）'}
               disabled={loading}
             />
           </Form.Item>
