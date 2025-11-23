@@ -18,7 +18,7 @@ export interface ApiResponse<T = any> {
 export interface LoginData {
   user: {
     id: string
-    username: string
+    login: string
   }
 }
 
