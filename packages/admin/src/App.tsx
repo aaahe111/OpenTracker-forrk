@@ -56,9 +56,21 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          {/* 允许AuthenticatedApp处理所有/home下的子路径 */}
+          <Route
+            path="/home/*"
+            element={
+              <ProtectedRoute>
+                <AuthenticatedApp />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* 捕获所有未匹配的路由，重定向到首页 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* 捕获所有未匹配的路由，已登录用户重定向到/home，未登录用户重定向到/ */}
+          <Route
+            path="*"
+            element={!!getToken() ? <Navigate to="/home" replace /> : <Navigate to="/" replace />}
+          />
         </Routes>
       </div>
     </Router>
