@@ -1,4 +1,4 @@
-import { reportError } from './error-reporter'
+import { JsErrorReporter } from './error-reporter'
 
 export const initJsErrorMonitoring = () => {
   // 全局 JS 错误
