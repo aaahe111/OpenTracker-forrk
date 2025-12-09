@@ -66,9 +66,6 @@ const subItems: MenuItem[] = [
     children: [
       { key: 'sub51', label: '错误分析总览' },
       { key: 'sub52', label: 'JS错误' },
-      { key: 'sub53', label: 'API错误' },
-      { key: 'sub54', label: '跨域错误' },
-      { key: 'sub55', label: '行为异常' },
     ],
   },
   {

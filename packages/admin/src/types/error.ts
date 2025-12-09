@@ -1,5 +1,5 @@
 // 错误类型枚举
-export type ErrorType = 'js' | 'api' | 'behavior' | 'cors'
+export type ErrorType = 'js' | 'api' | 'framework' | 'cors' | 'crash' | 'resource'
 
 // 错误数据接口（后端存储格式）
 export interface ErrorItem {

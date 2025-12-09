@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     // 目标 JS 版本（适配大部分浏览器）
+    "lib": ["ES6", "DOM"],
     "target": "ES6",
     // 模块系统（适配 Vite 的 ES 模块）
     "module": "ESNext",
