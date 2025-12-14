@@ -6,6 +6,8 @@ export interface JsErrorInfo {
   colno: number
   stack: string
 }
+
+//上报器类，负责把错误数据发送到服务器
 export class JsErrorReporter {
   private serverUrl: string
   constructor(serverUrl: string) {
@@ -17,12 +19,19 @@ export class JsErrorReporter {
       return
     }
     try {
-      const response = await fetch(`${this.serverUrl}/js-errors`, {
+      // 使用 SDK 统一上报接口格式
+      const response = await fetch(this.serverUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          type: 'Error', // 符合统一上报接口的类型要求
+          data: {
+            ...data,
+            subType: data.type, // 使用原 type 作为 subType (js-error 或 unhandled-rejection)
+          },
+        }),
         keepalive: true,
       })
       if (!response.ok) {
