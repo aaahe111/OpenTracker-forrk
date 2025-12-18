@@ -82,8 +82,8 @@ const subItems: MenuItem[] = [
     icon: <TabletOutlined />,
     label: '白屏监控',
     children: [
-      { key: 'sub71', label: 'option 1' },
-      { key: 'sub72', label: 'option 2' },
+      { key: 'sub71', label: '白屏分析' },
+      { key: 'sub72', label: '白屏列表' },
     ],
   },
 ]
