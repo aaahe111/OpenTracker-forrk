@@ -5,11 +5,7 @@ import {
   IMetrics,
   PageInfo,
   OriginInfo,
-  ClickData,
-  PVData,
   EngineInstance,
-  Plugin,
-  PluginContext,
 } from './types.js'
 import {
   wrHistory,
@@ -19,7 +15,8 @@ import {
   HttpCollector,
 } from './collector.js'
 import { ProcessorManager } from './processor.js'
-import { PluginManager } from './plugin-manager.js'
+import { PluginManager } from '../../../core/src/plugin/plugin-manager.js'
+import { Plugin, PluginContext } from '../../../core/src/plugin/types.js'
 
 export default class UserVitals {
   private engineInstance: EngineInstance
@@ -57,10 +54,21 @@ export default class UserVitals {
     this.breadcrumbs = new BehaviorStore({ maxBehaviorRecords: this.maxBehaviorRecords })
     // 初始化数据处理器管理器
     this.processorManager = new ProcessorManager()
+    // 初始化插件上下文（同时满足核心插件系统和行为监控模块的需求）
+    const pluginContext: any = {
+      // 核心插件系统需要的属性
+      tracker: engineInstance, // 使用engineInstance作为tracker
+      config: {}, // 空配置
+      send: this.userSendHandler, // 使用userSendHandler作为send方法
+
+      // 行为监控模块需要的属性
+      engineInstance: this.engineInstance,
+      metrics: this.metrics,
+      breadcrumbs: this.breadcrumbs,
+      sendHandler: this.userSendHandler,
+    }
     // 初始化插件管理器
-    this.pluginManager = new PluginManager()
-    // 初始化插件上下文
-    this.initPluginContext()
+    this.pluginManager = new PluginManager(pluginContext)
     // 初始化 用户自定义 事件捕获
     this.customHandler = this.initCustomerHandler()
     this.clickMountList = ['button'].map((x) => x.toLowerCase())
@@ -79,7 +87,7 @@ export default class UserVitals {
     // 初始化 Http 请求事件捕获
     this.initHttpHandler()
     // 加载所有已注册的插件
-    this.pluginManager.loadAll()
+    this.pluginManager.loadAllPlugins()
   }
 
   // 封装用户行为的上报入口
@@ -287,21 +295,9 @@ export default class UserVitals {
     this.breadcrumbs.clear()
   }
 
-  // 初始化插件上下文
-  initPluginContext = (): void => {
-    // 实现插件上下文的初始化逻辑
-    const pluginContext: PluginContext = {
-      engineInstance: this.engineInstance,
-      metrics: this.metrics,
-      breadcrumbs: this.breadcrumbs,
-      sendHandler: this.userSendHandler,
-    }
-    this.pluginManager.setContext(pluginContext)
-  }
-
   // 注册单个插件
   registerPlugin = (plugin: Plugin): void => {
-    this.pluginManager.register(plugin)
+    this.pluginManager.registerPlugin(plugin)
   }
 
   // 批量注册插件
@@ -309,29 +305,24 @@ export default class UserVitals {
     this.pluginManager.registerPlugins(plugins)
   }
 
-  // 卸载插件
-  unregisterPlugin = (pluginName: string): void => {
-    this.pluginManager.unregister(pluginName)
-  }
-
   // 加载插件
   loadPlugin = (pluginName: string): boolean => {
-    return this.pluginManager.load(pluginName)
+    return this.pluginManager.loadPlugin(pluginName)
   }
 
   // 加载所有已注册的插件
   loadAllPlugins = (): void => {
-    this.pluginManager.loadAll()
+    this.pluginManager.loadAllPlugins()
   }
 
   // 停止插件
   stopPlugin = (pluginName: string): boolean => {
-    return this.pluginManager.stop(pluginName)
+    return this.pluginManager.stopPlugin(pluginName)
   }
 
   // 停止所有已加载的插件
   stopAllPlugins = (): void => {
-    this.pluginManager.stopAll()
+    this.pluginManager.stopAllPlugins()
   }
 
   // 获取已注册的插件列表
@@ -351,12 +342,12 @@ export default class UserVitals {
 
   // 检查插件是否已注册
   isPluginRegistered = (pluginName: string): boolean => {
-    return this.pluginManager.isRegistered(pluginName)
+    return this.pluginManager.isPluginRegistered(pluginName)
   }
 
   // 检查插件是否已加载
   isPluginLoaded = (pluginName: string): boolean => {
-    return this.pluginManager.isLoaded(pluginName)
+    return this.pluginManager.isPluginLoaded(pluginName)
   }
 
   // 销毁实例，清理事件监听
